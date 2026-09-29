@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Shift Hours Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header class="topbar">
+            <h1>Weekly Shift Hours Tracker</h1>
+            <div class="summary-tag">
+                <span>Weekly Total</span>
+                <strong id="weekly-total">{{ weekly_total }} hours</strong>
+            </div>
+        </header>
+
+        <form id="shift-form" class="shift-form">
+            {% for day in days %}
+            <section class="day-card">
+                <div class="day-header">
+                    <h2>{{ day }}</h2>
+                    <span class="hours-label">{{ totals[day] }} hrs</span>
+                </div>
+
+                <div class="fields">
+                    <label>
+                        Start time
+                        <input type="time" name="{{ day }}_start" value="{{ data[day]['start'] }}">
+                    </label>
+
+                    <label>
+                        End time
+                        <input type="time" name="{{ day }}_end" value="{{ data[day]['end'] }}">
+                    </label>
+
+                    <label>
+                        Break (minutes)
+                        <input type="number" min="0" step="5" name="{{ day }}_break" value="{{ data[day]['break_minutes'] }}">
+                    </label>
+                </div>
+
+                <label>
+                    Notes
+                    <textarea name="{{ day }}_notes" rows="2">{{ data[day]['notes'] }}</textarea>
+                </label>
+            </section>
+            {% endfor %}
+
+            <button type="submit">Save Weekly Schedule</button>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('shift-form');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            const payload = {};
+
+            for (const day of days) {
+                payload[day] = {
+                    start: form.elements[`${day}_start`].value,
+                    end: form.elements[`${day}_end`].value,
+                    break_minutes: form.elements[`${day}_break`].value || 0,
+                    notes: form.elements[`${day}_notes`].value || ""
+                };
+            }
+
+            const response = await fetch('/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                document.getElementById('weekly-total').textContent = `${result.weekly_total} hours`;
+                alert('Weekly schedule saved successfully.');
+            } else {
+                alert('There was an error saving the schedule.');
+            }
+        });
+    </script>
+</body>
+</html>
